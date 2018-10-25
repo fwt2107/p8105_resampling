@@ -61,3 +61,132 @@ mean_and_sd <- function(x) {
 mean_and_sd(y)
 ```
 
+# Multiple inputs
+Now we look at single linear regression. We can write a function that simulates
+data and fits the model as a simple linear regression.
+```{r}
+sim_data = tibble(
+  x = rnorm(30, 1, 1),
+  y = 2 + 3*x + rnorm(30, 0, 1)
+)
+
+ggplot(sim_data, aes(x = x, y = y)) +
+  geom_point()
+
+ls_fit <- lm(y ~ x, data = sim_data)
+beta0_hat <- coef(ls_fit)[1]
+beta1_hat <- coef(ls_fit)[2]
+
+sim_regression <- function(n, beta0, beta1) {
+  sim_data = tibble(
+    x = rnorm(n, 1, 1),
+    y = beta0 + beta1*x + rnorm(n, 0, 1)
+  )
+
+  ls_fit <- lm(y ~ x, data = sim_data)
+  
+  tibble(
+    beta0_hat <- coef(ls_fit)[1],
+    beta1_hat <- coef(ls_fit)[2]
+  )
+}
+
+sim_regression(50, 0, 1)
+```
+
+# Revisiting old examples
+Functions make certain tasks much easier. You can iterate the same action
+a bunch of times without retyping it every iteration.
+```{r}
+url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
+
+dynamite_html = read_html(url)
+
+review_titles = dynamite_html %>%
+  html_nodes("#cm_cr-review_list .review-title") %>%
+  html_text()
+
+review_stars = dynamite_html %>%
+  html_nodes("#cm_cr-review_list .review-rating") %>%
+  html_text()
+
+review_text = dynamite_html %>%
+    html_nodes(".review-data:nth-child(4)") %>%
+    html_text()
+
+reviews = tibble(
+  title = review_titles,
+  stars = review_stars,
+  text = review_text
+)
+```
+
+```{r}
+extract_reviews <- function(url) {
+  dynamite_html = read_html(url)
+
+  review_titles = dynamite_html %>%
+    html_nodes("#cm_cr-review_list .review-title") %>%
+    html_text()
+  
+  review_stars = dynamite_html %>%
+    html_nodes("#cm_cr-review_list .review-rating") %>%
+    html_text()
+  
+  review_text = dynamite_html %>%
+      html_nodes(".review-data:nth-child(4)") %>%
+      html_text()
+  
+  reviews = tibble(
+    title = review_titles,
+    stars = review_stars,
+    text = review_text
+  )
+  
+  reviews
+}
+
+extract_reviews("https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=2")
+```
+
+We can iterate the function over multiple pages
+```{r}
+url_base <- "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber="
+
+urls <- str_c(url_base, 1:5)
+
+dynamite_reviews <- bind_rows(
+  extract_reviews(urls[1]),
+  extract_reviews(urls[2]),
+  extract_reviews(urls[3]),
+  extract_reviews(urls[4]),
+  extract_reviews(urls[5])
+)
+
+dynamite_reviews
+```
+
+Writing a function for an old Lord of the Rings sample
+```{r}
+lotr_reading <- function(range, name) {
+  movie <- readxl::read_excel("./Data/LotR_Words.xlsx", range = range) %>% 
+    mutate(movie = name)
+  
+  movie
+}
+
+lotr_tidy <- 
+  bind_rows(lotr_reading("B3:D6", "fellowship_ring"),
+            lotr_reading("F3:H6", "two_towers"),
+            lotr_reading("J3:L6", "return_king")) %>% 
+  janitor::clean_names() %>% 
+  gather(key = sex, value = words, female:male) %>% 
+  mutate(race = tolower(race)) %>% 
+  select(movie, everything())
+
+lotr_tidy
+
+```
+
+# Final thoughts
+You can use functions as arguments to other functions
