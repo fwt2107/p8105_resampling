@@ -1,0 +1,63 @@
+---
+title: "writing_functions"
+author: "Felix Tran"
+date: "October 25, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rvest)
+```
+
+# Writing our first function
+
+Start small
+```{r}
+set.seed(1)
+x <- rnorm(25, 5, 3)
+(x - mean(x)) / sd(x)
+
+z_scores <- function(x) {
+  (x - mean(x)) / sd(x)
+}
+
+y <- runif(100)
+z_scores(y)
+```
+
+Putting in checks on inputs help make your functions break less often
+```{r}
+z_scores <- function(x) {
+  if (!is.numeric(x))
+    stop("Argument x should be numeric")
+  else if (length(x) == 1)
+    stop("Z scores cannot be computed for length 1 vectors")
+  
+  z <- mean(x) / sd(x)
+  z
+}
+
+# z_scores("hi")
+# z_scores("iris")
+# z_scores(1)
+```
+
+# Making larger functions
+```{r}
+mean_and_sd <- function(x) {
+  if (!is.numeric(x))
+    stop("Argument x should be numeric")
+  else if (length(x) == 1)
+    stop("Z scores cannot be computed for length 1 vectors")
+  
+  tibble(
+    mean_x = mean(x),
+    sd_x = sd(x)
+  )
+}
+
+mean_and_sd(y)
+```
+
